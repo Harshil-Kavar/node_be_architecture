@@ -1,0 +1,130 @@
+version: '3.7'
+services:
+    elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.2.0
+        container_name: wx_apis_elasticsearch
+        environment:
+            - node.name=elasticsearch1
+            - cluster.name=docker-cluster
+            - cluster.initial_master_nodes=elasticsearch1
+            - bootstrap.memory_lock=true
+            - "ES_JAVA_OPTS=-Xms2048M -Xmx2048M"
+            - http.cors.enabled=true
+            - http.cors.allow-origin=*
+            - network.host=_eth0_
+            - reindex.remote.whitelist=docker.for.mac.host.internal:9203
+        ulimits:
+            nproc: 65535
+            memlock:
+                soft: -1
+                hard: -1
+        cap_add:
+            - ALL
+        # privileged: true
+        deploy:
+            replicas: 1
+            update_config:
+                parallelism: 1
+                delay: 10s
+            resources:
+                limits:
+                    cpus: '2'
+                    memory: 2048M
+                reservations:
+                    cpus: '2'
+                    memory: 2048M
+            restart_policy:
+                condition: on-failure
+                delay: 5s
+                max_attempts: 3
+                window: 10s
+        volumes:
+            - type: volume
+              source: eslogs
+              target: /var/log
+            - type: volume
+              source: esdata
+              target: /usr/share/elasticsearch/data
+        # networks:
+        #     - elastic
+        ports:
+            - 9203:9200
+            - 9300:9300
+    kibana:
+        image: docker.elastic.co/kibana/kibana:7.2.0
+        container_name: wx_apis_kibana-stack
+        environment:
+            SERVER_NAME: localhost
+            ELASTICSEARCH_URL: elasticsearch:9200/
+        ports:
+            - 5601:5601
+        volumes:
+            - type: volume
+              source: eslogs
+              target: /var/log
+        ulimits:
+            nproc: 65535
+            memlock:
+                soft: -1
+                hard: -1
+        cap_add:
+            - ALL
+        depends_on:
+            - "elasticsearch"
+        deploy:
+            replicas: 1
+            update_config:
+                parallelism: 1
+                delay: 10s
+            resources:
+                limits:
+                    cpus: '1'
+                    memory: 256M
+                reservations:
+                    cpus: '1'
+                    memory: 256M
+            restart_policy:
+                condition: on-failure
+                delay: 30s
+                max_attempts: 3
+                window: 120s
+        # networks:
+        #     - elastic
+    apmserver:
+        image: docker.elastic.co/apm/apm-server:7.2.0
+        command: --strict.perms=false
+        depends_on:
+            - "elasticsearch"
+            - "kibana"
+        ports:
+            - 8200:8200
+            - 8201:8200
+        environment:
+            - apm-server.host=0.0.0.0
+            - setup.kibana.host=kibana:5601
+            - output.elasticsearch.hosts=["elasticsearch:9200"]
+        # volumes:
+        #   - ${PWD}/configs/apm-server.yml:/usr/share/apm-server/apm-server.yml
+        # networks:
+        #     - elastic
+    mongo:
+        image: mongo
+        restart: always
+        volumes:
+            - mongo:/data/db
+        ports:
+            - 27018:27017
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: root
+            MONGO_INITDB_ROOT_PASSWORD: root
+            MONGODB_USER: workex
+            MONGODB_PASS: workex123
+            MONGO_DATA_DIR: /data/db
+            MONGO_LOG_DIR: /dev/null
+            MONGO_INITDB_DATABASE: workex
+
+volumes:
+    esdata:
+    eslogs:
+    mongo:
+

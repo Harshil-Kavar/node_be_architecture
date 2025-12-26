@@ -1,0 +1,21 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="elasticsearch" type="docker-deploy" factoryName="docker-image" server-name="Docker">
+    <deployment type="docker-image">
+      <settings>
+        <option name="imageTag" value="docker.elastic.co/elasticsearch/elasticsearch:7.3.0" />
+        <option name="containerName" value="elasticsearch-wx-wx_apis" />
+        <option name="portBindings">
+          <list>
+            <DockerPortBindingImpl>
+              <option name="containerPort" value="9200" />
+              <option name="hostIp" value="0.0.0.0" />
+              <option name="hostPort" value="9301" />
+            </DockerPortBindingImpl>
+          </list>
+        </option>
+        <option name="commandLineOptions" value="-e discovery.type=single-node -v $USER_HOME$/soft/persistant/elasticsearch:/data/db -e ES_JAVA_OPTS=&quot;-Xms1g -Xmx1g&quot;" />
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>

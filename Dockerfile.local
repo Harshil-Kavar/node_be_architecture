@@ -1,0 +1,27 @@
+FROM node:12.13.1
+MAINTAINER Rajat Gupta <rajat.gupta@workex.xyz>
+# Create work directory
+WORKDIR /usr/src/app
+
+# Install runtime dependencies
+
+RUN npm install yarn -g
+
+# Copy app source to work directory
+COPY . /usr/src/app
+RUN pwd
+RUN ls -a
+RUN apt-get update && apt-get -y install build-essential apt-utils
+#RUN apt-get build-dep imagemagick
+RUN apt-get install imagemagick
+RUN npm install --save bcryptjs && npm uninstall --save bcrypt
+RUN rm package-lock.json
+RUN yarn global add node-gyp
+RUN rm yarn.lock
+RUN yarn run setup
+ENV GOOGLE_APPLICATION_CREDENTIALS=/usr/src/app/service_account.json
+
+
+EXPOSE 3001
+
+CMD ["yarn", "start", "serve"]
